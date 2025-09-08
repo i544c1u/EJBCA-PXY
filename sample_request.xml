@@ -1,0 +1,10 @@
+<?xml version="1.0"?>
+<soap:Envelope xmlns:soap="http://schemas.xmlsoap.org/soap/envelope/">
+  <soap:Body>
+    <RecoverKeyResponse>
+      <serialNumber>12345</serialNumber>
+      <recoveredKey>KEY-FOR-12345</recoveredKey>
+      <status>SUCCESS</status>
+    </RecoverKeyResponse>
+  </soap:Body>
+</soap:Envelope>
