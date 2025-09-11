@@ -1,3 +1,75 @@
+### ✅ **Adapter (FastAPI + WebSockets)**
+
+* Built a **FastAPI service** that:
+
+  * Accepts **RESTful JSON requests**.
+  * Translates them into **SOAP XML**.
+  * Sends SOAP over a **WebSocket connection** to a mock SOAP server.
+  * Receives SOAP responses and converts them back into **JSON**.
+  * Handles SOAP faults with proper error responses (HTTP 400 / 502 / 504).
+
+* Implemented **endpoints**:
+
+  * `/recover_key` → wraps SOAP `RecoverKeyRequest`
+  * `/key_recovery_enroll` → wraps SOAP `KeyRecoveryEnrollRequest`
+  * `/cert_query/{query_type}` → generic wrapper for certificate query functions
+  * `/soap-to-json` → raw SOAP → JSON parser
+  * `/health` → simple health check
+
+---
+
+### ✅ **Mock SOAP Server (async websockets)**
+
+* Mock server listens on `ws://localhost:8765`.
+
+* Handles multiple request types with simulated responses:
+
+  * **Key Recovery** (`RecoverKeyRequest`) → returns recovered key.
+  * **Key Recovery Enroll** (`KeyRecoveryEnrollRequest`) → returns enrollment confirmation.
+  * **Certificate Queries**:
+
+    * `FindCertsRequest` → returns multiple certs.
+    * `GetCertificateRequest` → returns a single certificate.
+    * `GetLastCAChainRequest` → returns a CA chain.
+  * **Error case** → if message contains `<username>error</username>` or `<serialNumber>error</serialNumber>`, returns a SOAP fault.
+  * **Fallback** → generic response for unknown requests.
+
+* Includes **developer-friendly `print()` logging** of requests and responses.
+
+---
+
+### ✅ **Test Cases (curl examples)**
+
+* REST → SOAP → REST flow validated with test commands:
+
+  ```bash
+  # Recover key
+  curl -X POST http://localhost:8666/recover_key \
+       -H "Content-Type: application/json" \
+       -d '{"serialNumber":"12345","username":"alice"}'
+
+  # Key recovery enrollment
+  curl -X POST http://localhost:8666/key_recovery_enroll \
+       -H "Content-Type: application/json" \
+       -d '{"serialNumber":"12345","username":"alice","enrollmentCode":"xyz"}'
+
+  # Certificate queries
+  curl -X POST http://localhost:8666/cert_query/FindCertsRequest
+  curl -X POST http://localhost:8666/cert_query/GetCertificateRequest
+  curl -X POST http://localhost:8666/cert_query/GetLastCAChainRequest
+  ```
+
+---
+
+👉 Hence, we have a working **SOAP–REST adapter prototype** with mock backend coverage for:
+
+* **Key Recovery**
+* **Key Recovery Enroll**
+* **Certificate Query suite**
+* **Error handling**
+
+---
+
 ### ✅ Correct way for testing mTLS
 
 If you just want to mock/test locally, you can create a full chain with **OpenSSL**:
