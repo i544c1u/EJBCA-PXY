@@ -15,6 +15,10 @@ curl -X POST "http://localhost:8666/soap-to-json" -H "Content-Type: text/xml" --
 curl -X POST http://localhost:8666/cert_query/FindCertsRequest
 curl -X POST http://localhost:8666/cert_query/GetCertificateRequest
 curl -X POST http://localhost:8666/cert_query/GetLastCAChainRequest
+---
+     --cert client.crt \
+     --key client.key \
+     --cacert ca.crt
 """
 
 # File: mock_soap.py
