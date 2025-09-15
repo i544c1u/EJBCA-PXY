@@ -1,26 +1,46 @@
 ### ✅ **Adapter (FastAPI + WebSockets)**
 
 * Built a **FastAPI service** that:
-
+  * Presents `server.crt`/`server.key` for inbound TLS.
+  * Requires client certs and validates against `ca.crt`.
+    (So client still performs mTLS to proxy.)
   * Accepts **RESTful JSON requests**.
-  * Translates them into **SOAP XML**.
+  * Parse incoming REST JSON, translates them into **SOAP XML**.
   * Sends SOAP over a **WebSocket connection** to a mock SOAP server.
-  * Receives SOAP responses and converts them back into **JSON**.
+  * Receives SOAP responses and converts them back into **JSON** → send back to client over the original mTLS session.
   * Handles SOAP faults with proper error responses (HTTP 400 / 502 / 504).
 
 * Implemented **endpoints**:
-
   * `/recover_key` → wraps SOAP `RecoverKeyRequest`
   * `/key_recovery_enroll` → wraps SOAP `KeyRecoveryEnrollRequest`
   * `/cert_query/{query_type}` → generic wrapper for certificate query functions
   * `/soap-to-json` → raw SOAP → JSON parser
   * `/health` → simple health check
 
+* Wrap 2 more EJBCA **REST interfaces** (todo):
+  * `v1/certificate` Certificate REST Management API
+  * `v1/endentity` End Entity REST Management API
+  > https://docs.keyfactor.com/ejbca/latest/open-api-specification
+
+* Security controls
+  * Store outbound cert/key in an HSM or secure keystore (never plaintext).
+  * Limit filesystem ACLs to proxy service account.
+  * Use ephemeral client certs for proxy-to-server (rotate frequently).
+  * Keep separate certs: do **not** reuse end-user certs for proxy unless unavoidable.
+
+* Audit & monitoring
+  * Log: request timestamp, client cert fingerprint, client cert serial, request path, SOAP endpoint called, outcome (success/fault), response code. Append-mode logs.
+  * Log file integrity: send to remote central log collector or SIEM (immutable storage).
+  * Alert on use of expired cert, abnormal request volume per client cert, or unexpected cert fingerprint changes.
+
+* Rotation & lifecycle
+  * Automate rotation of proxy outbound certs; maintain overlap period to avoid downtime.
+  * Keep a revocation workflow: if a key leaks, immediately revoke and redeploy new key and cert.
 ---
 
 ### ✅ **Mock SOAP Server (async websockets)**
 
-* Mock server listens on `ws://localhost:8765`.
+* Mock server listens on `ws://localhost:8888`.
 
 * Handles multiple request types with simulated responses:
 
