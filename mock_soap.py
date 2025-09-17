@@ -23,10 +23,15 @@ curl -X POST http://localhost:8666/cert_query/GetLastCAChainRequest
 
 # File: mock_soap.py
 import asyncio
+import ssl
 import websockets
 
 HOST = 'localhost'
 PORT = 8888
+
+CERT_PATH = 'certs/server.crt'
+KEY_PATH = 'certs/server.key'
+CA_PATH = 'certs/ca.crt'
 
 async def handle(ws):
     try:
@@ -139,8 +144,13 @@ async def handle(ws):
 if __name__ == '__main__':
     print(f'Starting mock SOAP websocket server at ws://{HOST}:{PORT}')
 
+    ssl_context = ssl.create_default_context(ssl.Purpose.CLIENT_AUTH)
+    ssl_context.load_cert_chain(certfile=CERT_PATH, keyfile=KEY_PATH)
+    ssl_context.load_verify_locations(cafile=CA_PATH)
+    ssl_context.verify_mode = ssl.CERT_REQUIRED # Enfore client cert
+
     async def main():
-        async with websockets.serve(handle, HOST, PORT):
+        async with websockets.serve(handle, HOST, PORT, ssl=ssl_context):
             await asyncio.Future()  # run forever
 
     asyncio.run(main())
