@@ -1,12 +1,17 @@
 # File: main.py
 from fastapi import FastAPI, Request, HTTPException
 from pydantic import BaseModel
+import ssl
 import asyncio
 import websockets
 import xml.etree.ElementTree as ET
 
 app = FastAPI()
-SOAP_WS_URI = 'ws://localhost:8888'
+SOAP_WS_URI = 'wss://localhost:8888'
+
+CERT_PATH = 'certs/client.crt'
+KEY_PATH = 'certs/client.key'
+CA_PATH = 'certs/ca.crt'
 
 class RecoverRequest(BaseModel):
     serialNumber: str
@@ -75,7 +80,10 @@ def parse_soap_response(xml_text: str) -> dict:
 
 async def send_soap_over_ws(soap_xml: str, timeout: float = 5.0) -> str:
     try:
-        async with websockets.connect(SOAP_WS_URI) as ws:
+        ssl_context = ssl.create_default_context(ssl.Purpose.SERVER_AUTH, cafile=CA_PATH)
+        ssl_context.load_cert_chain(certfile=CERT_PATH, keyfile=KEY_PATH)
+
+        async with websockets.connect(SOAP_WS_URI, ssl=ssl_context) as ws:
             await ws.send(soap_xml)
             resp = await asyncio.wait_for(ws.recv(), timeout)
             return resp
