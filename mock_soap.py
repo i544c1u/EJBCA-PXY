@@ -1,20 +1,34 @@
 """
+> Refer to: https://docs.keyfactor.com/ejbca/latest/open-api-specification
 # Recover key
-curl -X POST http://localhost:8666/recover_key \
+curl -X POST https://localhost:8666/recover_key \
      -H "Content-Type: application/json" \
      -d '{"serialNumber":"12345","username":"alice"}'
 
 # Key recovery enrollment
-curl -X POST http://localhost:8666/key_recovery_enroll \
+curl -X POST https://localhost:8666/key_recovery_enroll \
      -H "Content-Type: application/json" \
      -d '{"serialNumber":"12345","username":"alice","enrollmentCode":"xyz"}'
 
-curl -X POST "http://localhost:8666/soap-to-json" -H "Content-Type: text/xml" --data-binary @sample_request.xml
+curl -X POST "https://localhost:8666/soap-to-json" -H "Content-Type: text/xml" --data-binary @sample_request.xml
 
 # Certificate queries
-curl -X POST http://localhost:8666/cert_query/FindCertsRequest
-curl -X POST http://localhost:8666/cert_query/GetCertificateRequest
-curl -X POST http://localhost:8666/cert_query/GetLastCAChainRequest
+curl -X POST https://localhost:8666/cert_query/FindCertsRequest
+curl -X POST https://localhost:8666/cert_query/GetCertificateRequest
+curl -X POST https://localhost:8666/cert_query/GetLastCAChainRequest
+
+# 
+curl -X 'POST' \
+  'https://localhost:8666/v1/certificate/certificaterequest' \
+  -H 'Content-Type: application/json' \
+  -d '{
+    "pkcs10": "-----BEGIN CERTIFICATE REQUEST-----\nMIICvTCCAaUCAQAweDEPMA0GA1UEBwwGUHVkb25nMREwDwYDVQQIDAhTaGFuZ2hh\naTELMAkGA1UEBhMCQ04xETAPBgNVBAoMCFN0YXJkdXN0MREwDwYDVQQLDAhTdGFy\nZHVzdDEfMB0GA1UEAwwWYnRoZC0wOTE4LnN0YXJkdXN0LmNvbTCCASIwDQYJKoZI\nhvcNAQEBBQADggEPADCCAQoCggEBALOhVM0L7Olg7bY1HOEbf4mMC2YuqMKBleoA\nKarHCJkZI3qqKTNV7BYfzZaCXjPkFioE2WPQwMnkY0GmIXJZWSKlN0VOlJ6rod4X\n6IzDdw1HGdqnefyl6JbyM1RImgFe59Fw9Ebxpl0O1Eha178nz/Iw9W0XUQMqPx3c\nmh6pEy1+tTQaCWMsvtg+iHOtw06TVdQEa3nOHS0mPWaZCmna/MtdYnIOUmMWxvym\nBB5tgVzGAoOPcQ57mD3ZNU1ygILRpMpk6L0ZxDI6+eDDFEZBlfvmv0mO1r6KQdKd\nqMSP2MkR1wYsASEqJN1SafiXFeHCzQYr8xmbzvsGzkQoCB12nTcCAwEAAaAAMA0G\nCSqGSIb3DQEBCwUAA4IBAQBJBHLhFwsqlKquD+/WJztF9jhLJmVWIVUq4zmd/LyU\n+tAhtuIkFug53sPxQldV4CX0Vv2q+YfbHrDtRqnj7Y4eZwiJ23TkM3p0qMDgPoLo\nJavXC+W8H4UpK3hA01rhR9miUwZJXu74CEAhZtC1x8HwAF+O3NNZI5SJysNfLPxD\nPZXeBGXXQkA4kkW1ZrJqXRjXvV5a2rBL4WMiL5dqBq4XhQbrfAe4loTRm3TLT/Q3\nk3ioecnhFZkQ5ecB0Uc3PCKgOoc1nxjdl0aCbJBKrj8eSbnVoNBRHRbpVkIk2/I2\nUZlkbMy5XWrYwpyF8dIFbe2zxNf0mHvyTHt"
+  "username": "JaneDoe", \
+  "password": "foo123", \
+  "include_chain": true, \
+  "certificate_authority_name": "ExampleCA", \
+  "certificate_request_type": "PKCS10" \
+  }'
 ---
      --cert client.crt \
      --key client.key \
