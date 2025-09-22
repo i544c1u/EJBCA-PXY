@@ -1,10 +1,14 @@
 # File: main.py
 from fastapi import FastAPI, Request, HTTPException
 from pydantic import BaseModel
+import logging
 import ssl
 import asyncio
 import websockets
 import xml.etree.ElementTree as ET
+
+logger = logging.getLogger("ejbca-pxy")
+logger.setLevel(logging.INFO)
 
 app = FastAPI()
 SOAP_WS_URI = 'wss://localhost:8888'
@@ -34,25 +38,14 @@ def build_recover_soap(serial: str, username: str) -> str:
   </soap:Body>
 </soap:Envelope>'''
 
-def build_keyrecovery_enroll_soap(serial: str, username: str, enrollmentCode: str) -> str:
-    return f'''<?xml version="1.0"?>
-<soap:Envelope xmlns:soap="http://schemas.xmlsoap.org/soap/envelope/">
-  <soap:Body>
-    <KeyRecoveryEnrollRequest>
-      <serialNumber>{serial}</serialNumber>
-      <username>{username}</username>
-      <enrollmentCode>{enrollmentCode}</enrollmentCode>
-    </KeyRecoveryEnrollRequest>
-  </soap:Body>
-</soap:Envelope>'''
-
-def build_cert_query_soap(request_type: str) -> str:
-    return f'''<?xml version="1.0"?>
-<soap:Envelope xmlns:soap="http://schemas.xmlsoap.org/soap/envelope/">
-  <soap:Body>
-    <{request_type}/>
-  </soap:Body>
-</soap:Envelope>'''
+def to_soap(root_tag: str, payload: dict) -> str:
+    env = ET.Element("{http://schemas.xmlsoap.org/soap/envelope/}Envelope",
+                        nsmap={'soap': 'http://schemas.xmlsoap.org/soap/envelope/'})
+    body = ET.SubElement(env, "{http://schemas.xmlsoap.org/soap/envelope/}Body")
+    main = ET.SubElement(body, root_tag)
+    for k, v in payload.items():
+        ET.SubElement(main, k).text = str(v)
+    return ET.tostring(env, encoding="utf-8", xml_declaration=True).decode()
 
 # SOAP parser
 def parse_soap_response(xml_text: str) -> dict:
@@ -78,12 +71,13 @@ def parse_soap_response(xml_text: str) -> dict:
     except ET.ParseError as e:
         return {'error': f'XML parse error: {e}'}
 
-async def send_soap_over_ws(soap_xml: str, timeout: float = 5.0) -> str:
+async def send_soap_over_ws(soap_path: str, soap_xml: str, timeout: float = 5.0) -> str:
+    logger.debug("PATH: %s\nCONTENT: %s", soap_path, soap_xml)
     try:
         ssl_context = ssl.create_default_context(ssl.Purpose.SERVER_AUTH, cafile=CA_PATH)
         ssl_context.load_cert_chain(certfile=CERT_PATH, keyfile=KEY_PATH)
-
-        async with websockets.connect(SOAP_WS_URI, ssl=ssl_context) as ws:
+        logger.info("SOAP req to: %s", SOAP_WS_URI + soap_path)
+        async with websockets.connect(SOAP_WS_URI + soap_path, ssl=ssl_context) as ws:
             await ws.send(soap_xml)
             resp = await asyncio.wait_for(ws.recv(), timeout)
             return resp
@@ -93,54 +87,43 @@ async def send_soap_over_ws(soap_xml: str, timeout: float = 5.0) -> str:
         raise HTTPException(status_code=502, detail=f'Error communicating with SOAP WS: {e}')
 
 # Endpoints
-@app.post('/recover_key')
-async def recover_key(req: RecoverRequest):
-    soap_request = build_recover_soap(req.serialNumber, req.username)
-    print('\n--- Adapter sending SOAP (recover_key) ---')
-    print(soap_request)
-    soap_resp = await send_soap_over_ws(soap_request)
-    print('\n--- Adapter received SOAP (recover_key) ---')
-    print(soap_resp)
-    parsed = parse_soap_response(soap_resp)
+@app.post("/v1/certificate/certificaterequest")
+async def cert_req(req: Request):
+    data = await req.json()
+    logger.info("Received certificate request: %s", data)
+
+    soap_req = to_soap("certificaterequest", data)
+    soap_rsp = await send_soap_over_ws("/certificate/certificaterequest", soap_req)
+
+    parsed = parse_soap_response(soap_rsp)
     if 'fault' in parsed:
         raise HTTPException(status_code=400, detail={'soap_fault': parsed['fault']})
     return parsed
 
-@app.post('/key_recovery_enroll')
-async def key_recovery_enroll(req: KeyRecoveryEnrollRequest):
-    soap_request = build_keyrecovery_enroll_soap(req.serialNumber, req.username, req.enrollmentCode)
-    print('\n--- Adapter sending SOAP (key_recovery_enroll) ---')
-    print(soap_request)
-    soap_resp = await send_soap_over_ws(soap_request)
-    print('\n--- Adapter received SOAP (key_recovery_enroll) ---')
-    print(soap_resp)
-    parsed = parse_soap_response(soap_resp)
+@app.post("/v1/certificate/search")
+async def cert_search(req: Request):
+    data = await req.json()
+    logger.info("Received certificate search: %s", data)
+
+    soap_req = to_soap("certificatesearch", data)
+    soap_rsp = await send_soap_over_ws("/certificate/search", soap_req)
+
+    parsed = parse_soap_response(soap_rsp)
     if 'fault' in parsed:
         raise HTTPException(status_code=400, detail={'soap_fault': parsed['fault']})
     return parsed
 
-@app.post('/cert_query/{query_type}')
-async def cert_query(query_type: str):
-    soap_request = build_cert_query_soap(query_type)
-    print(f'\n--- Adapter sending SOAP ({query_type}) ---')
-    print(soap_request)
-    soap_resp = await send_soap_over_ws(soap_request)
-    print(f'\n--- Adapter received SOAP ({query_type}) ---')
-    print(soap_resp)
-    parsed = parse_soap_response(soap_resp)
+@app.post("/v1/endentity")
+async def end_entity(req: Request):
+    data = await req.json()
+    logger.info("Received endentity request: %s", data)
+
+    soap_req = to_soap("endentity", data)
+    soap_rsp = await send_soap_over_ws("/endentity", soap_req)
+
+    parsed = parse_soap_response(soap_rsp)
     if 'fault' in parsed:
         raise HTTPException(status_code=400, detail={'soap_fault': parsed['fault']})
-    return parsed
-
-@app.post('/soap-to-json')
-async def soap_to_json(request: Request):
-    body = await request.body()
-    text = body.decode('utf-8')
-    print('\n--- Adapter received raw SOAP (soap-to-json) ---')
-    print(text)
-    parsed = parse_soap_response(text)
-    if 'error' in parsed:
-        raise HTTPException(status_code=400, detail=parsed['error'])
     return parsed
 
 @app.get('/health')
