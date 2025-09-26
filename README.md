@@ -10,16 +10,10 @@
   * Receives SOAP responses and converts them back into **JSON** → send back to client over the original mTLS session.
   * Handles SOAP faults with proper error responses (HTTP 400 / 502 / 504).
 
-* Implemented **endpoints**:
-  * `/recover_key` → wraps SOAP `RecoverKeyRequest`
-  * `/key_recovery_enroll` → wraps SOAP `KeyRecoveryEnrollRequest`
-  * `/cert_query/{query_type}` → generic wrapper for certificate query functions
-  * `/soap-to-json` → raw SOAP → JSON parser
-  * `/health` → simple health check
-
-* Wrap 2 more EJBCA **REST interfaces** (todo):
-  * `v1/certificate` Certificate REST Management API
-  * `v1/endentity` End Entity REST Management API
+* Implemented **REST endpoints** wrap 3 **EJBCA interfaces**:
+  * `v1/certificate/certificaterequest` Enrollment with client generated keys for an existing End Entity / get certificate (requires the certificate to approved before it returns it) → wraps SOAP `certificateRequest`
+  * `v1/endentity` End Entity REST Management API / creates a new end entity (user/device) → wraps SOAP `editUser (UserDataVOWSuser)`
+  * `v1/certificate/pkcs10enroll` Enrollment with client generated keys, using CSR subject / get certificate (allows retrieving before approval) → wraps SOAP `pkcs10Request`
   > https://docs.keyfactor.com/ejbca/latest/open-api-specification
 
 * Security controls
