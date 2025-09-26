@@ -70,29 +70,31 @@
   ```
 
   * `v1/certificate/certificaterequest` Enrollment with client generated keys for an existing End Entity / get certificate (requires the certificate to approved before it returns it) → wraps SOAP `certificateRequest`
+ 
+  e.g.1
   ```json
   {
-  username: String,
-  subject_dn: String,
-  subject_alt_name: String,
-  email: String,
-  extension_data: {
-      name: String,
-      value: String
-    },
-  ca_name: String,
-  certificate_profile_name: String,
-  end_entity_profile_name: String,
-  token: "USERGENERATED" / "P12" / "JKS" / "PEM",
-  account_biding_id: String
-  }
-  certificate_request: String,
-  certificate_authority_name: String,
-  username: String,
-  password: String,
-  include_chain: boolean
+    "certificate_request": "MIICh...V8shQ== OR -----BEGIN CERTIFICATE REQUEST-----\nMIICh...V8shQ==\n-----END CERTIFICATE REQUEST-----",
+    "username": "JohnDoe",
+    "password": "foo123",
+    "include_chain": true,
+    "certificate_authority_name": "ExampleCA",
+    "certificate_request_type": "PUBLICKEY, PKCS10, CRMF, SPKAC, or CVC"
   }
   ```
+
+  e.g.2
+  ```json
+  {
+    "certificate_request": "-----BEGIN CERTIFICATE REQUEST-----\nMIICh...V8shQ==\n-----END CERTIFICATE REQUEST-----",
+    "username": "api-test",
+    "password": "foo123",
+    "include_chain": true,
+    "certificate_authority_name": "Lumi Issuing CA",
+    "certificate_request_type": "PUBLICKEY, PKCS10, CRMF, SPKAC, or CVC"
+  }
+  ```
+
   * `v1/certificate/pkcs10enroll` Enrollment with client generated keys, using CSR subject / get certificate (allows retrieving before approval) → wraps SOAP `pkcs10Request`
   ```json
   Body:{
