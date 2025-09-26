@@ -85,6 +85,7 @@
 
   * `/v1/certificate/search` Searches for certificates confirming given criteria → wraps SOAP `findCerts(String username) or getCertificates(String username)`
   > note: SOAP API search func. allows `username`, `serial number`, or `subject DN` only.
+  
   e.g.1
   ```json
   {
