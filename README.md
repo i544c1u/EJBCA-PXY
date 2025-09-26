@@ -25,7 +25,7 @@
   ca_name: String,
   certificate_profile_name: String,
   end_entity_profile_name: String,
-  token: "USERGENERATED" / "P12" / "JKS" / "PEM"
+  token: "USERGENERATED" / "P12" / "JKS" / "PEM",
   account_biding_id: String
   }
   ```
@@ -43,7 +43,7 @@
   ca_name: String,
   certificate_profile_name: String,
   end_entity_profile_name: String,
-  token: "USERGENERATED" / "P12" / "JKS" / "PEM"
+  token: "USERGENERATED" / "P12" / "JKS" / "PEM",
   account_biding_id: String
   }
   certificate_request: String,
