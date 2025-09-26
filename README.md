@@ -12,7 +12,7 @@
 
 * Implemented **REST endpoints** wrap 3 **EJBCA interfaces**:
   * `v1/endentity` End Entity REST Management API / request a certificate creation → wraps SOAP `editUser (UserDataVOWSuser)`
-  ```json
+```json
 {
   "username": "JohnDoe",
   "password": "foo123",
@@ -44,7 +44,7 @@
   "certificate_serial_number": 1234567890,
   "card_number": "1234567890"
 }
-  ```
+```
   * `v1/certificate/certificaterequest` Enrollment with client generated keys for an existing End Entity / get certificate (requires the certificate to approved before it returns it) → wraps SOAP `certificateRequest`
   ```json
   {
