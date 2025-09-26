@@ -161,7 +161,7 @@
 curl -X POST https://localhost:8000/v1/certificate/certificaterequest \
   -H "Content-Type: application/json" \
   -d '{
-        "certificateRequest": "-----BEGIN CERTIFICATE REQUEST----------BEGIN CERTIFICATE REQUEST-----\nMIICvTCCAaUCAQAweDEPMA0GA1UEBwwGUHVkb25nMREwDwYDVQQIDAhTaGFuZ2hh\naTELMAkGA1UEBhMCQ04xETAPBgNVBAoMCFN0YXJkdXN0MREwDwYDVQQLDAhTdGFy\nZHVzdDEfMB0GA1UEAwwWYnRoZC0wOTE4LnN0YXJkdXN0LmNvbTCCASIwDQYJKoZI\nhvcNAQEBBQADggEPADCCAQoCggEBALOhVM0L7Olg7bY1HOEbf4mMC2YuqMKBleoA\nKarHCJkZI3qqKTNV7BYfzZaCXjPkFioE2WPQwMnkY0GmIXJZWSKlN0VOlJ6rod4X\n6IzDdw1HGdqnefyl6JbyM1RImgFe59Fw9Ebxpl0O1Eha178nz/Iw9W0XUQMqPx3c\nmh6pEy1+tTQaCWMsvtg+iHOtw06TVdQEa3nOHS0mPWaZCmna/MtdYnIOUmMWxvym\nBB5tgVzGAoOPcQ57mD3ZNU1ygILRpMpk6L0ZxDI6+eDDFEZBlfvmv0mO1r6KQdKd\nqMSP2MkR1wYsASEqJN1SafiXFeHCzQYr8xmbzvsGzkQoCB12nTcCAwEAAaAAMA0G\nCSqGSIb3DQEBCwUAA4IBAQBJBHLhFwsqlKquD+/WJztF9jhLJmVWIVUq4zmd/LyU\n+tAhtuIkFug53sPxQldV4CX0Vv2q+YfbHrDtRqnj7Y4eZwiJ23TkM3p0qMDgPoLo\nJavXC+W8H4UpK3hA01rhR9miUwZJXu74CEAhZtC1x8HwAF+O3NNZI5SJysNfLPxD\nPZXeBGXXQkA4kkW1ZrJqXRjXvV5a2rBL4WMiL5dqBq4XhQbrfAe4loTRm3TLT/Q3\nk3ioecnhFZkQ5ecB0Uc3PCKgOoc1nxjdl0aCbJBKrj8eSbnVoNBRHRbpVkIk2/I2\nUZlkbMy5XWrYwpyF8dIFbe2zxNf0mHvyTHt\n-----END CERTIFICATE REQUEST-----",
+        "certificateRequest": "-----BEGIN CERTIFICATE REQUEST-----\nMIICvTCCAaUCAQAweDEPMA0GA1UEBwwGUHVkb25nMREwDwYDVQQIDAhTaGFuZ2hh\naTELMAkGA1UEBhMCQ04xETAPBgNVBAoMCFN0YXJkdXN0MREwDwYDVQQLDAhTdGFy\nZHVzdDEfMB0GA1UEAwwWYnRoZC0wOTE4LnN0YXJkdXN0LmNvbTCCASIwDQYJKoZI\nhvcNAQEBBQADggEPADCCAQoCggEBALOhVM0L7Olg7bY1HOEbf4mMC2YuqMKBleoA\nKarHCJkZI3qqKTNV7BYfzZaCXjPkFioE2WPQwMnkY0GmIXJZWSKlN0VOlJ6rod4X\n6IzDdw1HGdqnefyl6JbyM1RImgFe59Fw9Ebxpl0O1Eha178nz/Iw9W0XUQMqPx3c\nmh6pEy1+tTQaCWMsvtg+iHOtw06TVdQEa3nOHS0mPWaZCmna/MtdYnIOUmMWxvym\nBB5tgVzGAoOPcQ57mD3ZNU1ygILRpMpk6L0ZxDI6+eDDFEZBlfvmv0mO1r6KQdKd\nqMSP2MkR1wYsASEqJN1SafiXFeHCzQYr8xmbzvsGzkQoCB12nTcCAwEAAaAAMA0G\nCSqGSIb3DQEBCwUAA4IBAQBJBHLhFwsqlKquD+/WJztF9jhLJmVWIVUq4zmd/LyU\n+tAhtuIkFug53sPxQldV4CX0Vv2q+YfbHrDtRqnj7Y4eZwiJ23TkM3p0qMDgPoLo\nJavXC+W8H4UpK3hA01rhR9miUwZJXu74CEAhZtC1x8HwAF+O3NNZI5SJysNfLPxD\nPZXeBGXXQkA4kkW1ZrJqXRjXvV5a2rBL4WMiL5dqBq4XhQbrfAe4loTRm3TLT/Q3\nk3ioecnhFZkQ5ecB0Uc3PCKgOoc1nxjdl0aCbJBKrj8eSbnVoNBRHRbpVkIk2/I2\nUZlkbMy5XWrYwpyF8dIFbe2zxNf0mHvyTHt\n-----END CERTIFICATE REQUEST-----",
         "username": "jdoe",
         "password": "SecretPass123",
         "certificateProfile": "ENDUSER",
@@ -175,7 +175,7 @@ curl -X POST https://localhost:8000/v1/certificate/certificaterequest \
 curl -X POST https://localhost:8000/v1/certificate/certificaterequest \
   -H "Content-Type: application/json" \
   -d '{
-        "certificateRequest": "-----BEGIN CERTIFICATE REQUEST----------BEGIN CERTIFICATE REQUEST-----\n...\n-----END CERTIFICATE REQUEST-----",
+        "certificateRequest": "-----BEGIN CERTIFICATE REQUEST-----\n...\n-----END CERTIFICATE REQUEST-----",
         "password": "SecretPass123",
         "certificateProfile": "ENDUSER",
         "endEntityProfile": "EMPTY",
