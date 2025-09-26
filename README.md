@@ -70,20 +70,8 @@
   ```
 
   * `v1/certificate/certificaterequest` Enrollment with client generated keys for an existing End Entity / get certificate (requires the certificate to approved before it returns it) → wraps SOAP `certificateRequest`
- 
-  e.g.1
-  ```json
-  {
-    "certificate_request": "MIICh...V8shQ== OR -----BEGIN CERTIFICATE REQUEST-----\nMIICh...V8shQ==\n-----END CERTIFICATE REQUEST-----",
-    "username": "JohnDoe",
-    "password": "foo123",
-    "include_chain": true,
-    "certificate_authority_name": "ExampleCA",
-    "certificate_request_type": "PUBLICKEY, PKCS10, CRMF, SPKAC, or CVC"
-  }
-  ```
 
-  e.g.2
+  e.g.
   ```json
   {
     "certificate_request": "-----BEGIN CERTIFICATE REQUEST-----\nMIICh...V8shQ==\n-----END CERTIFICATE REQUEST-----",
