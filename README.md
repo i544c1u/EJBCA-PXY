@@ -7,7 +7,7 @@
   * Accepts **RESTful JSON requests**.
   * Parse incoming REST JSON, translates them into **SOAP XML**.
   * Sends SOAP over a **WebSocket connection** to a mock SOAP server.
-  * Receives SOAP responses and converts them back into **JSON** → send back to client over the original mTLS session.
+  * Receives SOAP normal responses (200|OK, 201|Created) and converts them back into **JSON** → send back to client over the original mTLS session.
   * Handles SOAP faults with proper error responses (HTTP 400 / 502 / 504).
 
 * Implemented **REST endpoints** wrap 3 **EJBCA interfaces**:
@@ -83,18 +83,34 @@
   }
   ```
 
-  * `v1/certificate/pkcs10enroll` Enrollment with client generated keys, using CSR subject / get certificate (allows retrieving before approval) → wraps SOAP `pkcs10Request`
+  * `/v1/certificate/search` Searches for certificates confirming given criteria → wraps SOAP `findCerts(String username) or getCertificates(String username)`
+
+  e.g.1
   ```json
-  Body:{
-    certificate_request: String,
-    certificate_profile_name: String,
-    end_entity_profile_name: String,
-    certificate_authority_name: String,
-    username: String,
-    password: String,
-    account_biding_id: String,
-    include_chain: boolean,
-    email: String
+  {
+    "max_number_of_results": 10,
+    "criteria": [
+      {
+        "property": "QUERY",
+        "value": "02cc0d72edshaiuah728kk_2025-09-18T12:34:56.78901234Z",
+        "operation": "EQUAL"
+      }
+    ]
+  }
+  ```
+
+  e.g.2
+  ```json
+  {
+    "criteria": [
+      {
+        "property": "CERTIFICATE_PROFILE",
+        "value": "ENDUSER",
+        "operation": "EQUAL"
+      }
+    ],
+    "max_number_of_results": 10,
+    "current_page": 0
   }
   ```
   > https://docs.keyfactor.com/ejbca/latest/open-api-specification
