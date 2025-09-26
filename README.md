@@ -1,4 +1,4 @@
-### ✅ **Adapter (FastAPI + WebSockets)**
+### ✅ **Adapter/Proxy (FastAPI + Uvicorn to covert RESTful JSON request → SOAP WebSockets)**
 
 * Built a **FastAPI service** that:
   * Presents `server.crt`/`server.key` for inbound TLS.
