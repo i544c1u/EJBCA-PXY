@@ -11,8 +11,25 @@
   * Handles SOAP faults with proper error responses (HTTP 400 / 502 / 504).
 
 * Implemented **REST endpoints** wrap 3 **EJBCA interfaces**:
+  * `v1/endentity` End Entity REST Management API / request a certificate creation → wraps SOAP `editUser (UserDataVOWSuser)`
+  ```json
+  {
+  username: String,
+  subject_dn: String,
+  subject_alt_name: String,
+  email: String,
+  extension_data: {
+      name: String,
+      value: String
+    },
+  ca_name: String,
+  certificate_profile_name: String,
+  end_entity_profile_name: String,
+  token: "USERGENERATED" / "P12" / "JKS" / "PEM"
+  account_biding_id: String
+  }
+  ```
   * `v1/certificate/certificaterequest` Enrollment with client generated keys for an existing End Entity / get certificate (requires the certificate to approved before it returns it) → wraps SOAP `certificateRequest`
-  * `v1/endentity` End Entity REST Management API / creates a new end entity (user/device) → wraps SOAP `editUser (UserDataVOWSuser)`
   * `v1/certificate/pkcs10enroll` Enrollment with client generated keys, using CSR subject / get certificate (allows retrieving before approval) → wraps SOAP `pkcs10Request`
   > https://docs.keyfactor.com/ejbca/latest/open-api-specification
 
