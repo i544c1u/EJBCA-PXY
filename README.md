@@ -134,7 +134,7 @@
 
 ### ✅ **Mock SOAP Server (async websockets)**
 
-* Mock server listens on `ws://localhost:8888`.
+* Mock server listens on `wss://localhost:8888`.
 
 * Handles multiple request types with simulated responses:
 
