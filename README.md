@@ -12,39 +12,61 @@
 
 * Implemented **REST endpoints** wrap 3 **EJBCA interfaces**:
   * `v1/endentity` End Entity REST Management API / request a certificate creation → wraps SOAP `editUser (UserDataVOWSuser)`
-```json
-{
-  "username": "JohnDoe",
-  "password": "foo123",
-  "subject_dn": "CN=John Doe,SURNAME=Doe,GIVENNAME=John,C=SE",
-  "subject_alt_name": "rfc822Name=john.doe@example.com",
-  "email": "john.doe@example.com",
-  "extension_data": [
-    {
-      "name": "1.3.6.1.5.5.7.1.24/customdata_STARTTIME",
-      "value": "3003020105/2022-12-13 00:00:00"
+  e.g. 1
+  ```json
+  {
+    "username": "JohnDoe",
+    "password": "foo123",
+    "subject_dn": "CN=John Doe,SURNAME=Doe,GIVENNAME=John,C=SE",
+    "subject_alt_name": "rfc822Name=john.doe@example.com",
+      "email": "john.doe@example.com",
+      "extension_data": [
+        {
+          "name": "1.3.6.1.5.5.7.1.24/customdata_STARTTIME",
+          "value": "3003020105/2022-12-13 00:00:00"
+        }
+      ],
+      "custom_data": [
+        {
+          "name": "1.3.6.1.5.5.7.1.24/customdata_STARTTIME",
+          "value": "3003020105/2022-12-13 00:00:00"
+        }
+      ],
+      "ca_name": "ExampleCA",
+      "certificate_profile_name": "ENDUSER",
+      "end_entity_profile_name": "ExampleEEP",
+      "token": "P12",
+      "account_binding_id": "1234567890",
+      "key_recoverable": false,
+      "status": "NEW",
+      "send_notification": false,
+      "start_time": "ISO 8601 Date string, eg. '2023-06-15 14:07:09'",
+      "end_time": "ISO 8601 Date string, eg. '2023-06-15 14:07:09'",
+      "certificate_serial_number": 1234567890,
+      "card_number": "1234567890"
     }
-  ],
-  "custom_data": [
-    {
-      "name": "1.3.6.1.5.5.7.1.24/customdata_STARTTIME",
-      "value": "3003020105/2022-12-13 00:00:00"
-    }
-  ],
-  "ca_name": "ExampleCA",
-  "certificate_profile_name": "ENDUSER",
-  "end_entity_profile_name": "ExampleEEP",
-  "token": "P12",
-  "account_binding_id": "1234567890",
+  ```
+  e.g. 2
+  ```json
+  {
+    "username": "devicename_2025-09-18T12:34:56.78901234Z",
+    "email": "stardust.lu@lumi.com",
+    "password": "password",
+    "certificate_profile_name": "Lumi Client DEV - RSA 23mo",
+    "end_entity_profile_name": "Lumi Client",
+    "subject_dn": "L=Shanghai,ST=Shanghai,C=CN,O=Lumi,OU=Dev,CN=Stardust Lu,SURNAME=Lu,GIVENNAME=Stardust",
+    "subject_alt_name":null,
+    "ca_name": "e-commQASign",
+    "extension_data": null,
   "key_recoverable": false,
-  "status": "NEW",
-  "send_notification": false,
-  "start_time": "ISO 8601 Date string, eg. '2023-06-15 14:07:09'",
-  "end_time": "ISO 8601 Date string, eg. '2023-06-15 14:07:09'",
-  "certificate_serial_number": 1234567890,
-  "card_number": "1234567890"
-}
-```
+    "custom_data": [
+        {
+          "name": "customdata_ENDTIME",
+          "value": "2027-10-26 00:00:00"
+        }
+      ]
+    }
+    ```
   * `v1/certificate/certificaterequest` Enrollment with client generated keys for an existing End Entity / get certificate (requires the certificate to approved before it returns it) → wraps SOAP `certificateRequest`
   ```json
   {
