@@ -30,7 +30,43 @@
   }
   ```
   * `v1/certificate/certificaterequest` Enrollment with client generated keys for an existing End Entity / get certificate (requires the certificate to approved before it returns it) → wraps SOAP `certificateRequest`
+  ```json
+  {
+  username: String,
+  subject_dn: String,
+  subject_alt_name: String,
+  email: String,
+  extension_data: {
+      name: String,
+      value: String
+    },
+  ca_name: String,
+  certificate_profile_name: String,
+  end_entity_profile_name: String,
+  token: "USERGENERATED" / "P12" / "JKS" / "PEM"
+  account_biding_id: String
+  }
+  certificate_request: String,
+  certificate_authority_name: String,
+  username: String,
+  password: String,
+  include_chain: boolean
+  }
+  ```
   * `v1/certificate/pkcs10enroll` Enrollment with client generated keys, using CSR subject / get certificate (allows retrieving before approval) → wraps SOAP `pkcs10Request`
+  ```json
+  Body:{
+    certificate_request: String,
+    certificate_profile_name: String,
+    end_entity_profile_name: String,
+    certificate_authority_name: String,
+    username: String,
+    password: String,
+    account_biding_id: String,
+    include_chain: boolean,
+    email: String
+  }
+  ```
   > https://docs.keyfactor.com/ejbca/latest/open-api-specification
 
 * Security controls
