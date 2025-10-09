@@ -8,7 +8,7 @@ and replies with SOAP XML envelopes.
 Run:
     python soap_ws_mock.py
 Requires:
-    pip install websockets lxml
+    pip install websockets
 """
 
 import asyncio
@@ -16,7 +16,7 @@ import websockets
 import logging
 import ssl
 import uuid
-from lxml import etree
+import xml.etree.ElementTree as ET
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger("soap-ws-mock")
@@ -29,34 +29,42 @@ KEY_PATH = 'certs/server.key'
 CA_PATH = 'certs/ca.crt'
 
 SOAP_NS = "http://schemas.xmlsoap.org/soap/envelope/"
+SOAP_PREFIX = "{%s}" % SOAP_NS
 
-def soap_envelope(body_el: etree.Element) -> str:
+ET.register_namespace("soap", SOAP_NS)
+
+
+def soap_envelope(body_el: ET.Element) -> str:
     """Wrap an XML element inside a SOAP Envelope/Body."""
-    envelope = etree.Element("{%s}Envelope" % SOAP_NS, nsmap={"soap": SOAP_NS})
-    body = etree.SubElement(envelope, "{%s}Body" % SOAP_NS)
+    envelope = ET.Element(f"{SOAP_PREFIX}Envelope")
+    body = ET.SubElement(envelope, f"{SOAP_PREFIX}Body")
     body.append(body_el)
-    return etree.tostring(envelope, encoding="utf-8", xml_declaration=True).decode()
+    return ET.tostring(envelope, encoding="utf-8", xml_declaration=True).decode()
 
-def parse_soap(xml_text: str) -> etree.Element:
+
+def parse_soap(xml_text: str) -> ET.Element:
     """Return first element inside <soap:Body>."""
-    root = etree.fromstring(xml_text.encode())
-    body = root.find(".//{%s}Body" % SOAP_NS)
+    try:
+        root = ET.fromstring(xml_text)
+    except ET.ParseError as e:
+        raise ValueError(f"Invalid XML: {e}") from e
+
+    body = root.find(f".//{SOAP_PREFIX}Body")
     if body is None or len(body) == 0:
         raise ValueError("No SOAP Body found")
-    return body[0]
+    return list(body)[0]
+
 
 def xml_error_response(code: str, message: str, extra: dict = None) -> str:
-    """
-    Build a SOAP error response with given error code and message.
-    extra can include other child elements.
-    """
-    err = etree.Element("ErrorResponse")
-    etree.SubElement(err, "error_code").text = code
-    etree.SubElement(err, "error_message").text = message
+    """Build a SOAP error response with given error code and message."""
+    err = ET.Element("ErrorResponse")
+    ET.SubElement(err, "error_code").text = code
+    ET.SubElement(err, "error_message").text = message
     if extra:
         for k, v in extra.items():
-            etree.SubElement(err, k).text = str(v)
+            ET.SubElement(err, k).text = str(v)
     return soap_envelope(err)
+
 
 async def handle_certificaterequest(ws):
     async for msg in ws:
@@ -68,7 +76,6 @@ async def handle_certificaterequest(ws):
             await ws.send(resp)
             continue
 
-        # validate required fields
         csr = inner.findtext("CSR")
         username = inner.findtext("Username")
         if not csr or not username:
@@ -76,52 +83,54 @@ async def handle_certificaterequest(ws):
             await ws.send(resp)
             continue
 
-        # Ok path
         request_id = str(uuid.uuid4())
-        resp_body = etree.Element("CertificateRequestResponse")
-        etree.SubElement(resp_body, "status").text = "OK"
-        etree.SubElement(resp_body, "requestId").text = request_id
-        etree.SubElement(resp_body, "username").text = username
-        etree.SubElement(resp_body, "message").text = "CSR accepted (SOAP WS mock)"
+        resp_body = ET.Element("CertificateRequestResponse")
+        ET.SubElement(resp_body, "status").text = "OK"
+        ET.SubElement(resp_body, "requestId").text = request_id
+        ET.SubElement(resp_body, "username").text = username
+        ET.SubElement(resp_body, "message").text = "CSR accepted (SOAP WS mock)"
         await ws.send(soap_envelope(resp_body))
+
 
 async def handle_search(ws):
     async for msg in ws:
         logger.info("Search SOAP received")
         try:
             inner = parse_soap(msg)
-            username = inner.findtext("Username", default="unknown")
+            username = inner.findtext("Username") or "unknown"
         except Exception as e:
-            err = etree.Element("Error")
+            err = ET.Element("Error")
             err.text = f"Parse error: {e}"
             await ws.send(soap_envelope(err))
             continue
 
-        resp = etree.Element("SearchResponse")
-        items = etree.SubElement(resp, "items")
-        item = etree.SubElement(items, "item")
-        etree.SubElement(item, "certificateId").text = str(uuid.uuid4())
-        etree.SubElement(item, "username").text = username
-        etree.SubElement(item, "status").text = "ISSUED"
+        resp = ET.Element("SearchResponse")
+        items = ET.SubElement(resp, "items")
+        item = ET.SubElement(items, "item")
+        ET.SubElement(item, "certificateId").text = str(uuid.uuid4())
+        ET.SubElement(item, "username").text = username
+        ET.SubElement(item, "status").text = "ISSUED"
         await ws.send(soap_envelope(resp))
+
 
 async def handle_endentity(ws):
     async for msg in ws:
         logger.info("EndEntity SOAP received")
         try:
             inner = parse_soap(msg)
-            username = inner.findtext("Username", default="unknown")
+            username = inner.findtext("Username") or "unknown"
         except Exception as e:
-            err = etree.Element("Error")
+            err = ET.Element("Error")
             err.text = f"Parse error: {e}"
             await ws.send(soap_envelope(err))
             continue
 
-        resp = etree.Element("EndEntityResponse")
-        etree.SubElement(resp, "status").text = "OK"
-        etree.SubElement(resp, "username").text = username
-        etree.SubElement(resp, "message").text = "End entity processed (SOAP WS mock)"
+        resp = ET.Element("EndEntityResponse")
+        ET.SubElement(resp, "status").text = "OK"
+        ET.SubElement(resp, "username").text = username
+        ET.SubElement(resp, "message").text = "End entity processed (SOAP WS mock)"
         await ws.send(soap_envelope(resp))
+
 
 async def dispatch(ws):
     path = ws.request.path
@@ -133,18 +142,18 @@ async def dispatch(ws):
     elif path == "/endentity":
         await handle_endentity(ws)
     else:
-        err = etree.Element("Error")
+        err = ET.Element("Error")
         err.text = f"Unknown path {path}"
         await ws.send(soap_envelope(err))
         await ws.close()
 
+
 if __name__ == "__main__":
     logger.info("Starting WebSocket mock server on %s:%d", HOST, PORT)
-    # mTLS Settiings
     ssl_context = ssl.create_default_context(ssl.Purpose.CLIENT_AUTH)
     ssl_context.load_cert_chain(certfile=CERT_PATH, keyfile=KEY_PATH)
     ssl_context.load_verify_locations(cafile=CA_PATH)
-    ssl_context.verify_mode = ssl.CERT_REQUIRED # Enfore client cert
+    ssl_context.verify_mode = ssl.CERT_REQUIRED  # Enforce client cert
 
     async def main():
         async with websockets.serve(dispatch, HOST, PORT, ssl=ssl_context):
