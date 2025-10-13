@@ -44,7 +44,7 @@ uvicorn "$APP" \
   --ssl-certfile "$SERVER_CERT" \
   --ssl-keyfile "$SERVER_KEY" \
   --ssl-ca-certs "$CLIENT_CA" \
-  --ssl-cert-reqs 2    # 2 = ssl.CERT_REQUIRED (mutual TLS)
+  --ssl-cert-reqs 2 \
   --access-log \
   --log-level info \
   >> "$ACCESS_LOG" 2>> "$ERROR_LOG"
