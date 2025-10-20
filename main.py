@@ -1,131 +1,119 @@
-# File: main.py
 from fastapi import FastAPI, Request, HTTPException
-from pydantic import BaseModel
 import logging
 import ssl
-import asyncio
-import websockets
+import http.client
 import xml.etree.ElementTree as ET
-
-logger = logging.getLogger("ejbca-pxy")
-logger.setLevel(logging.INFO)
+from xml.dom import minidom
 
 app = FastAPI()
-SOAP_WS_URI = 'wss://localhost:8888'
 
-CERT_PATH = 'certs/client.crt'
-KEY_PATH = 'certs/client.key'
-CA_PATH = 'certs/ca.crt'
+logger = logging.getLogger("ejbca-proxy")
+logger.setLevel(logging.INFO)
 
-class RecoverRequest(BaseModel):
-    serialNumber: str
-    username: str
+# EBCA SOAP endpoint details
+HOST = "localhost"
+PORT = 8443
+SOAP_PATH = "/ejbcaws/ejbcaws"
 
-class KeyRecoveryEnrollRequest(BaseModel):
-    serialNumber: str
-    username: str
-    enrollmentCode: str
+CERT_PATH = "certs/proxy.crt"
+KEY_PATH = "certs/proxy.key"
+CAPATH = "certs/CAFull.crt"
 
-# SOAP builders
-def build_recover_soap(serial: str, username: str) -> str:
-    return f'''<?xml version="1.0"?>
-<soap:Envelope xmlns:soap="http://schemas.xmlsoap.org/soap/envelope/">
-  <soap:Body>
-    <RecoverKeyRequest>
-      <serialNumber>{serial}</serialNumber>
-      <username>{username}</username>
-    </RecoverKeyRequest>
-  </soap:Body>
-</soap:Envelope>'''
+SOAP_NS = "http://schemas.xmlsoap.org/soap/envelope/"
+EJBCA_NS = "http://ws.protocol.core.ejbca.org/"
 
-def to_soap(root_tag: str, payload: dict) -> str:
-    env = ET.Element("{http://schemas.xmlsoap.org/soap/envelope/}Envelope",
-                        nsmap={'soap': 'http://schemas.xmlsoap.org/soap/envelope/'})
-    body = ET.SubElement(env, "{http://schemas.xmlsoap.org/soap/envelope/}Body")
-    main = ET.SubElement(body, root_tag)
+ET.register_namespace('soap', SOAP_NS)
+ET.register_namespace('ejbca', EJBCA_NS)
+
+# Build SOAP envelope from JSON
+def build_soap_envelope(operation: str, payload: dict) -> str:
+    envelope = ET.Element(f"{{{SOAP_NS}}}Envelope")
+    body = ET.SubElement(envelope, f"{{{SOAP_NS}}}Body")
+    op_el = ET.SubElement(body, f"{{{EJBCA_NS}}}{operation}")
+
     for k, v in payload.items():
-        ET.SubElement(main, k).text = str(v)
-    return ET.tostring(env, encoding="utf-8", xml_declaration=True).decode()
+        if v is None:
+            continue
+        if isinstance(v, list):
+            for item in v:
+                sub_el = ET.SubElement(op_el, k)
+                if isinstance(item, dict):
+                    for sub_k, sub_v in item.items():
+                        ET.SubElement(sub_el, sub_k).text = str(sub_v)
+                else:
+                    sub_el.text = str(item)
+        else:
+            ET.SubElement(op_el, k).text = str(v)
 
-# SOAP parser
+    rough = ET.tostring(envelope, encoding="utf-8")
+    pretty = minidom.parseString(rough).toprettyxml(indent="    ")
+    logger.info("Generated SOAP XML:\n%s", pretty)
+    return pretty
+
+# Parse SOAP response into dict
 def parse_soap_response(xml_text: str) -> dict:
     try:
-        ns = {'soap': 'http://schemas.xmlsoap.org/soap/envelope/'}
         root = ET.fromstring(xml_text)
-        body = root.find('soap:Body', ns)
-        if body is None:
-            return {'error': 'No SOAP Body'}
-
-        fault = body.find('soap:Fault', ns)
-        if fault is not None:
-            faultstring = fault.find('faultstring')
-            return {'fault': faultstring.text if faultstring is not None else 'Unknown fault'}
-
-        # Extract first child as dict
+        body = root.find(f".//{{{SOAP_NS}}}Body")
+        if body is None or len(body) == 0:
+            return {"error": "No SOAP Body"}
         first = list(body)[0]
-        out = {}
-        for child in first:
-            out[child.tag] = child.text
-        return {first.tag: out}
-
+        result = {child.tag: child.text for child in first}
+        return {first.tag: result}
     except ET.ParseError as e:
-        return {'error': f'XML parse error: {e}'}
+        return {"error": f"XML parse error: {e}"}
 
-async def send_soap_over_ws(soap_path: str, soap_xml: str, timeout: float = 5.0) -> str:
-    logger.debug("PATH: %s\nCONTENT: %s", soap_path, soap_xml)
+# Send SOAP over HTTPS using http.client with mTLS
+def send_soap_request(operation: str, soap_xml: str) -> str:
     try:
-        ssl_context = ssl.create_default_context(ssl.Purpose.SERVER_AUTH, cafile=CA_PATH)
-        ssl_context.load_cert_chain(certfile=CERT_PATH, keyfile=KEY_PATH)
-        logger.info("SOAP req to: %s", SOAP_WS_URI + soap_path)
-        async with websockets.connect(SOAP_WS_URI + soap_path, ssl=ssl_context) as ws:
-            await ws.send(soap_xml)
-            resp = await asyncio.wait_for(ws.recv(), timeout)
-            return resp
-    except asyncio.TimeoutError:
-        raise HTTPException(status_code=504, detail='Timeout waiting for SOAP response')
+        context = ssl.create_default_context(cafile=CAPATH)
+        context.load_cert_chain(certfile=CERT_PATH, keyfile=KEY_PATH)
+        conn = http.client.HTTPSConnection(HOST, PORT, context=context)
+        headers = {
+            "Content-Type": "text/xml; charset=utf-8",
+            "SOAPAction": f"http://ws.protocol.core.ejbca.org/{operation}"
+        }
+        conn.request("POST", SOAP_PATH, body=soap_xml.encode("utf-8"), headers=headers)
+        response = conn.getresponse()
+        resp_data = response.read().decode("utf-8")
+        conn.close()
+        return resp_data
     except Exception as e:
-        raise HTTPException(status_code=502, detail=f'Error communicating with SOAP WS: {e}')
+        raise HTTPException(status_code=502, detail=f"Error communicating with SOAP WS: {e}")
 
-# Endpoints
 @app.post("/v1/certificate/certificaterequest")
-async def cert_req(req: Request):
+async def certificate_request(req: Request):
     data = await req.json()
     logger.info("Received certificate request: %s", data)
-
-    soap_req = to_soap("certificaterequest", data)
-    soap_rsp = await send_soap_over_ws("/certificate/certificaterequest", soap_req)
-
+    soap_xml = build_soap_envelope("certificateRequest", data)
+    soap_rsp = send_soap_request("certificateRequest", soap_xml)
     parsed = parse_soap_response(soap_rsp)
-    if 'fault' in parsed:
-        raise HTTPException(status_code=400, detail={'soap_fault': parsed['fault']})
+    if "error" in parsed:
+        raise HTTPException(status_code=400, detail=parsed)
     return parsed
 
 @app.post("/v1/certificate/search")
-async def cert_search(req: Request):
+async def certificate_search(req: Request):
     data = await req.json()
     logger.info("Received certificate search: %s", data)
-
-    soap_req = to_soap("certificatesearch", data)
-    soap_rsp = await send_soap_over_ws("/certificate/search", soap_req)
-
+    soap_xml = build_soap_envelope("findCerts", data)
+    soap_rsp = send_soap_request("findCerts", soap_xml)
     parsed = parse_soap_response(soap_rsp)
-    if 'fault' in parsed:
-        raise HTTPException(status_code=400, detail={'soap_fault': parsed['fault']})
+    if "error" in parsed:
+        raise HTTPException(status_code=400, detail=parsed)
     return parsed
 
 @app.post("/v1/endentity")
 async def end_entity(req: Request):
     data = await req.json()
-    logger.info("Received endentity request: %s", data)
-
-    soap_req = to_soap("endentity", data)
-    soap_rsp = await send_soap_over_ws("/endentity", soap_req)
-
+    logger.info("Received end entity request: %s", data)
+    soap_xml = build_soap_envelope("editUser", data)
+    soap_rsp = send_soap_request("editUser", soap_xml)
     parsed = parse_soap_response(soap_rsp)
-    if 'fault' in parsed:
-        raise HTTPException(status_code=400, detail={'soap_fault': parsed['fault']})
+    if "error" in parsed:
+        raise HTTPException(status_code=400, detail=parsed)
     return parsed
 
-@app.get('/health')
+@app.get("/health")
 async def health():
-    return {'status': 'ok'}
+    return {"status": "ok"}
