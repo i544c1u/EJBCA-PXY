@@ -51,6 +51,7 @@ def build_soap_envelope(operation: str, payload: dict) -> str:
     return pretty
 
 # Parse SOAP response into dict
+'''
 def parse_soap_response(xml_text: str) -> dict:
     try:
         root = ET.fromstring(xml_text)
@@ -62,6 +63,19 @@ def parse_soap_response(xml_text: str) -> dict:
         return {first.tag: result}
     except ET.ParseError as e:
         return {"error": f"XML parse error: {e}"}
+'''
+def parse_soap_response(xml_text: str) -> dict:
+    if not xml_text.strip().startswith("<"):
+        return {"error": "Response is not XML", "body": xml_text[:200]}
+    try:
+        root = ET.fromstring(xml_text)
+        if root.tag != f"{{{SOAP_NS}}}Envelope":
+            return {"error": "Response is not a SOAP Envelope", "body": xml_text[:200]}
+        body = root.find(f".//{{{SOAP_NS}}}Body")
+        if body in None:
+            return {"error": "No SOAP body element found"}
+        except ET.ParseError as e:
+            return {"error": "XML parse error: {e}", "body": xml_text[:200]}
 
 # Send SOAP over HTTPS using http.client with mTLS
 def send_soap_request(operation: str, soap_xml: str) -> str:
