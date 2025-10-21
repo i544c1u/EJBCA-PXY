@@ -20,7 +20,7 @@ ERROR_LOG="$LOG_DIR/error.log"
 
 SERVER_CERT="certs/server.crt"
 SERVER_KEY="certs/server.key"
-CLIENT_CA="certs/ca.crt"
+CLIENT_CA="certs/client-ca.crt"
 
 # Extra SSL options:
 #   - require client cert
