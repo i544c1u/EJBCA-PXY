@@ -1,3 +1,11 @@
+### ❓ **Backgroud**
+* Community EJBCA supports mostly SOAP Web Services and limited RESTful APIs.
+* Modern systems expect REST APIs with JSON payloads over mTLS (TLS 1.2/1.3).
+
+* To bridge this gap, we need a proxy service that:
+  * Accepts JSON REST requests from Client side over mTLS.
+  * Translates them into SOAP requests for EJBCA-CE (JSON ↔️ SOAP XML)
+  * Parses SOAP responses and returns JSON responses back to Client.
 ### ✅ **Adapter/Proxy (FastAPI + Uvicorn to covert RESTful JSON request → SOAP WebSockets)**
 
 * Built a **FastAPI service** that:
